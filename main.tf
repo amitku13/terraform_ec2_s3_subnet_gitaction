@@ -21,6 +21,13 @@ resource "aws_subnet" "main" {
     Name = "Action-Subnet"
   }
 }
+resource "aws_instance" "example" {
+  # Other config
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
 
 # EC2 Instance
 resource "aws_instance" "main" {
