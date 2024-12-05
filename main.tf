@@ -10,6 +10,12 @@ resource "aws_vpc" "main" {
     Name = "Action-VPC"
   }
 }
+terraform {
+  backend "local" {
+    path = "terraform.tfstate"
+  }
+}
+
 
 # Subnet
 resource "aws_subnet" "main" {
