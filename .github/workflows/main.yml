@@ -47,7 +47,7 @@ on:
       ami_id:
         description: "AMI ID for EC2 instance and Autoscaling"
         required: true
-        default: "ami-0866a3c8686eaeeba"
+        default: "ami-0453ec754f44f9a4a"
       instance_type:
         description: "Instance type for EC2 and Autoscaling"
         required: true
@@ -55,11 +55,11 @@ on:
       subnet_id:
         description: "Subnet ID for EC2 instance"
         required: true
-        default: "subnet-00c4a2e995cce6293"
+        default: "subnet-00c22c9ec69ab8e47"
       security_group_id:
         description: "Security Group ID for EC2 instance"
         required: true
-        default: "sg-068223c218a9d62ee"
+        default: "sg-0cec77f0a31766efb"
       s3_bucket_name:
         description: "Prefix for S3 bucket name"
         required: true
