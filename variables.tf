@@ -43,6 +43,7 @@ variable "availability_zone" {
 variable "ami_id" {
   description = "AMI ID for the EC2 instance"
   type        = string
+  default     = ""  # Set to empty or remove if it should be provided by the user
 }
 
 variable "instance_type" {
@@ -54,11 +55,13 @@ variable "instance_type" {
 variable "key_pair_name" {
   description = "Key pair name for EC2"
   type        = string
+  default     = ""  # Set to empty or remove if it should be provided by the user
 }
 
 variable "s3_bucket_name" {
   description = "Name prefix for the S3 bucket"
   type        = string
+  default     = ""  # Set to empty or remove if it should be provided by the user
 }
 
 variable "autoscaling_desired_capacity" {
@@ -82,14 +85,17 @@ variable "autoscaling_min_size" {
 variable "security_group_id" {
   description = "Security Group ID for EC2 instance"
   type        = string
+  default     = ""  # Set to empty or remove if it should be provided by the user
 }
 
 variable "subnet_id" {
   description = "Subnet ID for EC2 instance"
   type        = string
+  default     = ""  # Set to empty or remove if it should be provided by the user
 }
 
 variable "aws_region" {
   description = "AWS Region where resources will be deployed"
   type        = string
+  default     = ""  # Set to empty or remove if it should be provided by the user
 }
