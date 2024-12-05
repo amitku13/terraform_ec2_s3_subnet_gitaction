@@ -1,90 +1,119 @@
-name: Deploy EC2 Instance
+name: Terraform CI/CD Workflow
 
 on:
   workflow_dispatch:
     inputs:
       aws_region:
-        description: "AWS Region to deploy resources"
+        description: "AWS Region where resources will be deployed"
         required: true
         default: "us-east-1"
-      ami_id:
-        description: "AMI ID for the EC2 instance"
+        type: choice
+        options:
+          - us-east-1
+          - us-west-1
+          - us-west-2
+      create_vpc:
+        description: "Set to true to create a VPC"
         required: true
+        default: false
+        type: choice
+        options:
+          - true
+          - false
+      create_ec2:
+        description: "Set to true to create an EC2 instance"
+        required: true
+        default: false
+        type: choice
+        options:
+          - true
+          - false
+      create_s3:
+        description: "Set to true to create an S3 bucket"
+        required: true
+        default: false
+        type: choice
+        options:
+          - true
+          - false
+      create_autoscaling:
+        description: "Set to true to create an Autoscaling Group"
+        required: true
+        default: false
+        type: choice
+        options:
+          - true
+          - false
+      ami_id:
+        description: "AMI ID for EC2 instance and Autoscaling"
+        required: true
+        default: "ami-0866a3c8686eaeeba"
       instance_type:
-        description: "Instance type (e.g., t2.micro)"
+        description: "Instance type for EC2 and Autoscaling"
         required: true
         default: "t2.micro"
-      key_pair:
-        description: "Key pair name for SSH access"
+      subnet_id:
+        description: "Subnet ID for EC2 instance"
         required: true
+        default: "subnet-00c4a2e995cce6293"
+      security_group_id:
+        description: "Security Group ID for EC2 instance"
+        required: true
+        default: "sg-068223c218a9d62ee"
+      s3_bucket_name:
+        description: "Prefix for S3 bucket name"
+        required: true
+        default: "example-bucket"
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.5.7
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.5.0
 
-      - name: Install AWS CLI (Optional)
-        run: |
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip awscliv2.zip
-          sudo ./aws/install
+    - name: Terraform Init
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      run: terraform init
 
-      - name: Configure AWS Credentials
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ github.event.inputs.aws_region }}
-        run: echo "AWS credentials configured."
+    - name: Terraform Plan
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      run: |
+        terraform plan \
+          -var="aws_region=${{ github.event.inputs.aws_region }}" \
+          -var="create_vpc=${{ github.event.inputs.create_vpc }}" \
+          -var="create_ec2=${{ github.event.inputs.create_ec2 }}" \
+          -var="create_s3=${{ github.event.inputs.create_s3 }}" \
+          -var="create_autoscaling=${{ github.event.inputs.create_autoscaling }}" \
+          -var="ami_id=${{ github.event.inputs.ami_id }}" \
+          -var="instance_type=${{ github.event.inputs.instance_type }}" \
+          -var="subnet_id=${{ github.event.inputs.subnet_id }}" \
+          -var="security_group_id=${{ github.event.inputs.security_group_id }}" \
+          -var="s3_bucket_name=${{ github.event.inputs.s3_bucket_name }}"
 
-      - name: Debug Inputs
-        run: |
-          echo "AWS Region: '${{ github.event.inputs.aws_region }}'"
-          echo "AMI ID: '${{ github.event.inputs.ami_id }}'"
-          echo "Instance Type: '${{ github.event.inputs.instance_type }}'"
-          echo "Key Pair: '${{ github.event.inputs.key_pair }}'"
-
-      - name: Validate Inputs
-        run: |
-          if [ -z "${{ github.event.inputs.aws_region }}" ]; then
-            echo "Error: aws_region is required but not provided."
-            exit 1
-          fi
-          if [ -z "${{ github.event.inputs.ami_id }}" ]; then
-            echo "Error: ami_id is required but not provided."
-            exit 1
-          fi
-          if [ -z "${{ github.event.inputs.instance_type }}" ]; then
-            echo "Error: instance_type is required but not provided."
-            exit 1
-          fi
-          if [ -z "${{ github.event.inputs.key_pair }}" ]; then
-            echo "Error: key_pair is required but not provided."
-            exit 1
-          fi
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Plan
-        run: |
-          terraform plan \
-            -var="aws_region=${{ github.event.inputs.aws_region }}" \
-            -var="ami_id=${{ github.event.inputs.ami_id }}" \
-            -var="instance_type=${{ github.event.inputs.instance_type }}" \
-            -var="key_pair=${{ github.event.inputs.key_pair }}"
-
-      - name: Terraform Apply
-        run: |
-          terraform apply -auto-approve \
-            -var="aws_region=${{ github.event.inputs.aws_region }}" \
-            -var="ami_id=${{ github.event.inputs.ami_id }}" \
-            -var="instance_type=${{ github.event.inputs.instance_type }}" \
-            -var="key_pair=${{ github.event.inputs.key_pair }}"
+    - name: Terraform Apply
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      run: |
+        terraform apply -auto-approve \
+          -var="aws_region=${{ github.event.inputs.aws_region }}" \
+          -var="create_vpc=${{ github.event.inputs.create_vpc }}" \
+          -var="create_ec2=${{ github.event.inputs.create_ec2 }}" \
+          -var="create_s3=${{ github.event.inputs.create_s3 }}" \
+          -var="create_autoscaling=${{ github.event.inputs.create_autoscaling }}" \
+          -var="ami_id=${{ github.event.inputs.ami_id }}" \
+          -var="instance_type=${{ github.event.inputs.instance_type }}" \
+          -var="subnet_id=${{ github.event.inputs.subnet_id }}" \
+          -var="security_group_id=${{ github.event.inputs.security_group_id }}" \
+          -var="s3_bucket_name=${{ github.event.inputs.s3_bucket_name }}"
