@@ -51,6 +51,14 @@ resource "aws_s3_bucket" "main" {
     prevent_destroy = true
   }
 }
+terraform {
+  backend "s3" {
+    bucket = "example-bucket"
+    key    = "terraform.tfstate"
+    region = "us-east-1"
+  }
+}
+
 
 # Launch Template for Autoscaling
 resource "aws_launch_template" "main" {
