@@ -38,6 +38,32 @@ jobs:
         run: |
           echo "AWS credentials configured."
 
+      - name: Debug Inputs
+        run: |
+          echo "AWS Region: '${{ github.event.inputs.aws_region }}'"
+          echo "AMI ID: '${{ github.event.inputs.ami_id }}'"
+          echo "Instance Type: '${{ github.event.inputs.instance_type }}'"
+          echo "Key Pair: '${{ github.event.inputs.key_pair }}'"
+
+      - name: Validate Inputs
+        run: |
+          if [ -z "${{ github.event.inputs.aws_region }}" ]; then
+            echo "Error: aws_region is required but not provided."
+            exit 1
+          fi
+          if [ -z "${{ github.event.inputs.ami_id }}" ]; then
+            echo "Error: ami_id is required but not provided."
+            exit 1
+          fi
+          if [ -z "${{ github.event.inputs.instance_type }}" ]; then
+            echo "Error: instance_type is required but not provided."
+            exit 1
+          fi
+          if [ -z "${{ github.event.inputs.key_pair }}" ]; then
+            echo "Error: key_pair is required but not provided."
+            exit 1
+          fi
+
       - name: Terraform Init
         run: terraform init
 
