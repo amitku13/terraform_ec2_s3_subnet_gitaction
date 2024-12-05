@@ -10,12 +10,6 @@ resource "aws_vpc" "main" {
     Name = "Action-VPC"
   }
 }
-terraform {
-  backend "local" {
-    path = "terraform.tfstate"
-  }
-}
-
 
 # Subnet
 resource "aws_subnet" "main" {
@@ -27,13 +21,6 @@ resource "aws_subnet" "main" {
     Name = "Action-Subnet"
   }
 }
-resource "aws_instance" "example" {
-  # Other config
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
 
 # EC2 Instance
 resource "aws_instance" "main" {
@@ -44,6 +31,10 @@ resource "aws_instance" "main" {
   key_name      = var.key_pair_name
   tags = {
     Name = "Action-EC2"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -60,7 +51,6 @@ resource "aws_s3_bucket" "main" {
   tags = {
     Name = "Action-S3"
   }
-  
 }
 
 # Launch Template for Autoscaling
@@ -95,7 +85,26 @@ resource "aws_autoscaling_group" "main" {
 
   tag {
     key                 = "Name"
-    value               = "ASG-Instance"
+    value               = "AutoScaling-Instance"
     propagate_at_launch = true
   }
 }
+
+# Variables
+variable "aws_region" {}
+variable "create_vpc" { default = true }
+variable "vpc_cidr" { default = "10.0.0.0/16" }
+variable "subnet_cidr" { default = "10.0.1.0/24" }
+variable "availability_zone" { default = "us-east-1a" }
+variable "create_ec2" { default = true }
+variable "create_s3" { default = true }
+variable "create_autoscaling" { default = true }
+variable "ami_id" { default = "ami-0453ec754f44f9a4a" }
+variable "instance_type" { default = "t2.micro" }
+variable "key_pair_name" { default = "my-key-pair" }
+variable "subnet_id" { default = "subnet-00c22c9ec69ab8e47" }
+variable "security_group_id" { default = "sg-0cec77f0a31766efb" }
+variable "s3_bucket_name" { default = "example-bucket" }
+variable "autoscaling_desired_capacity" { default = 1 }
+variable "autoscaling_max_size" { default = 3 }
+variable "autoscaling_min_size" { default = 1 }
