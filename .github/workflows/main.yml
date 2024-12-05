@@ -12,6 +12,14 @@ on:
           - us-east-1
           - us-west-1
           - us-west-2
+      action:
+        description: "Choose the Terraform action (apply or destroy)"
+        required: true
+        default: "apply"
+        type: choice
+        options:
+          - apply
+          - destroy
       create_vpc:
         description: "Set to true to create a VPC"
         required: true
@@ -102,16 +110,29 @@ jobs:
           -var="security_group_id=${{ github.event.inputs.security_group_id }}" \
           -var="s3_bucket_name=${{ github.event.inputs.s3_bucket_name }}"
 
-    - name: Terraform Apply
+    - name: Terraform Apply or Destroy
       run: |
-        terraform apply -auto-approve \
-          -var="aws_region=${{ github.event.inputs.aws_region }}" \
-          -var="create_vpc=${{ github.event.inputs.create_vpc }}" \
-          -var="create_ec2=${{ github.event.inputs.create_ec2 }}" \
-          -var="create_s3=${{ github.event.inputs.create_s3 }}" \
-          -var="create_autoscaling=${{ github.event.inputs.create_autoscaling }}" \
-          -var="ami_id=${{ github.event.inputs.ami_id }}" \
-          -var="instance_type=${{ github.event.inputs.instance_type }}" \
-          -var="subnet_id=${{ github.event.inputs.subnet_id }}" \
-          -var="security_group_id=${{ github.event.inputs.security_group_id }}" \
-          -var="s3_bucket_name=${{ github.event.inputs.s3_bucket_name }}"
+        if [[ "${{ github.event.inputs.action }}" == "apply" ]]; then
+          terraform apply -auto-approve \
+            -var="aws_region=${{ github.event.inputs.aws_region }}" \
+            -var="create_vpc=${{ github.event.inputs.create_vpc }}" \
+            -var="create_ec2=${{ github.event.inputs.create_ec2 }}" \
+            -var="create_s3=${{ github.event.inputs.create_s3 }}" \
+            -var="create_autoscaling=${{ github.event.inputs.create_autoscaling }}" \
+            -var="ami_id=${{ github.event.inputs.ami_id }}" \
+            -var="instance_type=${{ github.event.inputs.instance_type }}" \
+            -var="subnet_id=${{ github.event.inputs.subnet_id }}" \
+            -var="security_group_id=${{ github.event.inputs.security_group_id }}" \
+            -var="s3_bucket_name=${{ github.event.inputs.s3_bucket_name }}"
+        elif [[ "${{ github.event.inputs.action }}" == "destroy" ]]; then
+          terraform destroy -auto-approve \
+            -var="aws_region=${{ github.event.inputs.aws_region }}" \
+            -var="create_vpc=${{ github.event.inputs.create_vpc }}" \
+            -var="create_ec2=${{ github.event.inputs.create_ec2 }}" \
+            -var="create_s3=${{ github.event.inputs.create_s3 }}" \
+            -var="create_autoscaling=${{ github.event.inputs.create_autoscaling }}" \
+            -var="ami_id=${{ github.event.inputs.ami_id }}" \
+            -var="instance_type=${{ github.event.inputs.instance_type }}" \
+            -var="subnet_id=${{ github.event.inputs.subnet_id }}" \
+            -var="security_group_id=${{ github.event.inputs.security_group_id }}" \
+            -var="s3_bucket_name=${{ github.event.inputs.s3_bucket_name }}"
