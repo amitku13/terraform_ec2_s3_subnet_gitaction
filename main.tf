@@ -1,13 +1,13 @@
-variable "ami_id" {}
-variable "instance_type" {}
-variable "key_pair_name" {}
-
 provider "aws" {
-  region = "us-east-1"
+  region = var.aws_region
 }
 
-resource "aws_instance" "example" {
+resource "aws_instance" "my_ec2" {
   ami           = var.ami_id
   instance_type = var.instance_type
-  key_name      = var.key_pair_name
+  key_name      = var.key_pair
+
+  tags = {
+    Name = "Terraform-EC2"
+  }
 }
