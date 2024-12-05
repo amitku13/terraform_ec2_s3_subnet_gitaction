@@ -47,18 +47,8 @@ resource "aws_s3_bucket" "main" {
   tags = {
     Name = "Action-S3"
   }
-  lifecycle {
-    prevent_destroy = true
-  }
+  
 }
-terraform {
-  backend "s3" {
-    bucket = "example-bucket"
-    key    = "terraform.tfstate"
-    region = "us-east-1"
-  }
-}
-
 
 # Launch Template for Autoscaling
 resource "aws_launch_template" "main" {
@@ -89,11 +79,10 @@ resource "aws_autoscaling_group" "main" {
   }
 
   vpc_zone_identifier = var.create_vpc ? [aws_subnet.main[0].id] : [var.subnet_id]
-  tags = [
-    {
-      key                 = "Name"
-      value               = "ASG-Instance"
-      propagate_at_launch = true
-    }
-  ]
+
+  tag {
+    key                 = "Name"
+    value               = "ASG-Instance"
+    propagate_at_launch = true
+  }
 }
