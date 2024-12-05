@@ -90,21 +90,4 @@ resource "aws_autoscaling_group" "main" {
   }
 }
 
-# Variables
-variable "aws_region" {}
-variable "create_vpc" { default = true }
-variable "vpc_cidr" { default = "10.0.0.0/16" }
-variable "subnet_cidr" { default = "10.0.1.0/24" }
-variable "availability_zone" { default = "us-east-1a" }
-variable "create_ec2" { default = true }
-variable "create_s3" { default = true }
-variable "create_autoscaling" { default = true }
-variable "ami_id" { default = "ami-0453ec754f44f9a4a" }
-variable "instance_type" { default = "t2.micro" }
-variable "key_pair_name" { default = "my-key-pair" }
-variable "subnet_id" { default = "subnet-00c22c9ec69ab8e47" }
-variable "security_group_id" { default = "sg-0cec77f0a31766efb" }
-variable "s3_bucket_name" { default = "example-bucket" }
-variable "autoscaling_desired_capacity" { default = 1 }
-variable "autoscaling_max_size" { default = 3 }
-variable "autoscaling_min_size" { default = 1 }
+
