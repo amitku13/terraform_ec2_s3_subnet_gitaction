@@ -92,6 +92,9 @@ jobs:
       run: terraform init
 
     - name: Terraform Apply or Destroy
+      env:
+        TF_LOG: DEBUG
+        TF_LOG_PATH: terraform-debug.log
       run: |
         case "${{ github.event.inputs.terraform_action }}" in
           apply)
@@ -107,22 +110,59 @@ jobs:
               -var="s3_bucket_name=${{ github.event.inputs.s3_bucket_name }}"
             ;;
           destroy_ec2)
-            terraform destroy -auto-approve \
-              -target=aws_instance.ec2_instance
+            terraform state list | grep "aws_instance.ec2_instance" > /dev/null
+            if [ $? -eq 0 ]; then
+              terraform destroy -auto-approve \
+                -var="aws_region=${{ github.event.inputs.aws_region }}" \
+                -var="subnet_id=${{ github.event.inputs.subnet_id }}" \
+                -var="security_group_id=${{ github.event.inputs.security_group_id }}" \
+                -target=aws_instance.ec2_instance
+            else
+              echo "Resource aws_instance.ec2_instance not found in state. Skipping destroy."
+            fi
             ;;
           destroy_s3)
-            terraform destroy -auto-approve \
-              -target=aws_s3_bucket.s3_bucket
+            terraform state list | grep "aws_s3_bucket.s3_bucket" > /dev/null
+            if [ $? -eq 0 ]; then
+              terraform destroy -auto-approve \
+                -var="aws_region=${{ github.event.inputs.aws_region }}" \
+                -var="s3_bucket_name=${{ github.event.inputs.s3_bucket_name }}" \
+                -target=aws_s3_bucket.s3_bucket
+            else
+              echo "Resource aws_s3_bucket.s3_bucket not found in state. Skipping destroy."
+            fi
             ;;
           destroy_autoscaling)
-            terraform destroy -auto-approve \
-              -target=aws_autoscaling_group.autoscaling_group
+            terraform state list | grep "aws_autoscaling_group.autoscaling_group" > /dev/null
+            if [ $? -eq 0 ]; then
+              terraform destroy -auto-approve \
+                -var="aws_region=${{ github.event.inputs.aws_region }}" \
+                -target=aws_autoscaling_group.autoscaling_group
+            else
+              echo "Resource aws_autoscaling_group.autoscaling_group not found in state. Skipping destroy."
+            fi
             ;;
           destroy_all)
-            terraform destroy -auto-approve
+            terraform destroy -auto-approve \
+              -var="aws_region=${{ github.event.inputs.aws_region }}" \
+              -var="create_ec2=${{ github.event.inputs.create_ec2 }}" \
+              -var="create_s3=${{ github.event.inputs.create_s3 }}" \
+              -var="create_autoscaling=${{ github.event.inputs.create_autoscaling }}" \
+              -var="ami_id=${{ github.event.inputs.ami_id }}" \
+              -var="instance_type=${{ github.event.inputs.instance_type }}" \
+              -var="subnet_id=${{ github.event.inputs.subnet_id }}" \
+              -var="security_group_id=${{ github.event.inputs.security_group_id }}" \
+              -var="s3_bucket_name=${{ github.event.inputs.s3_bucket_name }}"
             ;;
           *)
             echo "Invalid terraform_action. Exiting."
             exit 1
             ;;
         esac
+
+    - name: Upload Terraform Logs (Optional Debugging)
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: terraform-debug-logs
+        path: terraform-debug.log
