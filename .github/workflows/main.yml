@@ -1,0 +1,37 @@
+name: Deploy EC2 Instance
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan -var="aws_region=${{ secrets.AWS_REGION }}" \
+                           -var="ami_id=${{ secrets.AMI_ID }}" \
+                           -var="instance_type=${{ secrets.INSTANCE_TYPE }}" \
+                           -var="key_pair=${{ secrets.KEY_PAIR }}"
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -var="aws_region=${{ secrets.AWS_REGION }}" \
+                           -var="ami_id=${{ secrets.AMI_ID }}" \
+                           -var="instance_type=${{ secrets.INSTANCE_TYPE }}" \
+                           -var="key_pair=${{ secrets.KEY_PAIR }}"
+
+      - name: Save Outputs
+        run: echo "::set-output name=instance_id::$(terraform output -raw instance_id)"
