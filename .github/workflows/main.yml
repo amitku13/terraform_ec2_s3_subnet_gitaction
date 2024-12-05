@@ -1,9 +1,22 @@
 name: Deploy EC2 Instance
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      aws_region:
+        description: "AWS Region to deploy resources"
+        required: true
+        default: "us-east-1"
+      ami_id:
+        description: "AMI ID for the EC2 instance"
+        required: true
+      instance_type:
+        description: "Instance type (e.g., t2.micro)"
+        required: true
+        default: "t2.micro"
+      key_pair:
+        description: "Key pair name for SSH access"
+        required: true
 
 jobs:
   terraform:
@@ -18,20 +31,28 @@ jobs:
         with:
           terraform_version: 1.5.7
 
+      - name: Configure AWS Credentials
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          echo "AWS credentials configured."
+
       - name: Terraform Init
         run: terraform init
 
       - name: Terraform Plan
-        run: terraform plan -var="aws_region=${{ secrets.AWS_REGION }}" \
-                           -var="ami_id=${{ secrets.AMI_ID }}" \
-                           -var="instance_type=${{ secrets.INSTANCE_TYPE }}" \
-                           -var="key_pair=${{ secrets.KEY_PAIR }}"
+        run: |
+          terraform plan \
+            -var="aws_region=${{ github.event.inputs.aws_region }}" \
+            -var="ami_id=${{ github.event.inputs.ami_id }}" \
+            -var="instance_type=${{ github.event.inputs.instance_type }}" \
+            -var="key_pair=${{ github.event.inputs.key_pair }}"
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve -var="aws_region=${{ secrets.AWS_REGION }}" \
-                           -var="ami_id=${{ secrets.AMI_ID }}" \
-                           -var="instance_type=${{ secrets.INSTANCE_TYPE }}" \
-                           -var="key_pair=${{ secrets.KEY_PAIR }}"
-
-      - name: Save Outputs
-        run: echo "::set-output name=instance_id::$(terraform output -raw instance_id)"
+        run: |
+          terraform apply -auto-approve \
+            -var="aws_region=${{ github.event.inputs.aws_region }}" \
+            -var="ami_id=${{ github.event.inputs.ami_id }}" \
+            -var="instance_type=${{ github.event.inputs.instance_type }}" \
+            -var="key_pair=${{ github.event.inputs.key_pair }}"
