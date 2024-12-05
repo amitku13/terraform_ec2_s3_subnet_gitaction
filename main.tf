@@ -43,9 +43,12 @@ resource "random_id" "bucket_suffix" {
 # S3 Bucket
 resource "aws_s3_bucket" "main" {
   count  = var.create_s3 ? 1 : 0
-  bucket = "${var.s3_bucket_name}-${random_id.bucket_suffix[0].hex}"
+  bucket = var.create_s3 ? "${var.s3_bucket_name}-${random_id.bucket_suffix[0].hex}" : null
   tags = {
     Name = "Action-S3"
+  }
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -78,4 +81,11 @@ resource "aws_autoscaling_group" "main" {
   }
 
   vpc_zone_identifier = var.create_vpc ? [aws_subnet.main[0].id] : [var.subnet_id]
+  tags = [
+    {
+      key                 = "Name"
+      value               = "ASG-Instance"
+      propagate_at_launch = true
+    }
+  ]
 }
