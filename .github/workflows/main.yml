@@ -12,18 +12,38 @@ on:
           - us-east-1
           - us-west-1
           - us-west-2
-      action:
-        description: "Choose the Terraform action (apply or destroy)"
+      create_vpc:
+        description: "Set to true to create a VPC"
         required: true
-        default: "apply"
+        default: false
         type: choice
         options:
-          - apply
-          - destroy
-      resources:
-        description: "JSON string specifying which resources to create"
+          - true
+          - false
+      create_ec2:
+        description: "Set to true to create an EC2 instance"
         required: true
-        default: '{"create_vpc": false, "create_ec2": false, "create_s3": false, "create_autoscaling": false}'
+        default: false
+        type: choice
+        options:
+          - true
+          - false
+      create_s3:
+        description: "Set to true to create an S3 bucket"
+        required: true
+        default: false
+        type: choice
+        options:
+          - true
+          - false
+      create_autoscaling:
+        description: "Set to true to create an Autoscaling Group"
+        required: true
+        default: false
+        type: choice
+        options:
+          - true
+          - false
       ami_id:
         description: "AMI ID for EC2 instance and Autoscaling"
         required: true
@@ -65,11 +85,6 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ github.event.inputs.aws_region }}
 
-    - name: Parse Resource Input
-      id: parse_resources
-      run: |
-        echo "resources=$(echo '${{ github.event.inputs.resources }}' | jq -r '.')" >> $GITHUB_ENV
-
     - name: Terraform Init
       run: terraform init
 
@@ -77,39 +92,26 @@ jobs:
       run: |
         terraform plan \
           -var="aws_region=${{ github.event.inputs.aws_region }}" \
-          -var="create_vpc=$(echo ${{ env.resources }} | jq -r '.create_vpc')" \
-          -var="create_ec2=$(echo ${{ env.resources }} | jq -r '.create_ec2')" \
-          -var="create_s3=$(echo ${{ env.resources }} | jq -r '.create_s3')" \
-          -var="create_autoscaling=$(echo ${{ env.resources }} | jq -r '.create_autoscaling')" \
+          -var="create_vpc=${{ github.event.inputs.create_vpc }}" \
+          -var="create_ec2=${{ github.event.inputs.create_ec2 }}" \
+          -var="create_s3=${{ github.event.inputs.create_s3 }}" \
+          -var="create_autoscaling=${{ github.event.inputs.create_autoscaling }}" \
           -var="ami_id=${{ github.event.inputs.ami_id }}" \
           -var="instance_type=${{ github.event.inputs.instance_type }}" \
           -var="subnet_id=${{ github.event.inputs.subnet_id }}" \
           -var="security_group_id=${{ github.event.inputs.security_group_id }}" \
           -var="s3_bucket_name=${{ github.event.inputs.s3_bucket_name }}"
 
-    - name: Terraform Apply or Destroy
+    - name: Terraform Apply
       run: |
-        if [[ "${{ github.event.inputs.action }}" == "apply" ]]; then
-          terraform apply -auto-approve \
-            -var="aws_region=${{ github.event.inputs.aws_region }}" \
-            -var="create_vpc=$(echo ${{ env.resources }} | jq -r '.create_vpc')" \
-            -var="create_ec2=$(echo ${{ env.resources }} | jq -r '.create_ec2')" \
-            -var="create_s3=$(echo ${{ env.resources }} | jq -r '.create_s3')" \
-            -var="create_autoscaling=$(echo ${{ env.resources }} | jq -r '.create_autoscaling')" \
-            -var="ami_id=${{ github.event.inputs.ami_id }}" \
-            -var="instance_type=${{ github.event.inputs.instance_type }}" \
-            -var="subnet_id=${{ github.event.inputs.subnet_id }}" \
-            -var="security_group_id=${{ github.event.inputs.security_group_id }}" \
-            -var="s3_bucket_name=${{ github.event.inputs.s3_bucket_name }}"
-        elif [[ "${{ github.event.inputs.action }}" == "destroy" ]]; then
-          terraform destroy -auto-approve \
-            -var="aws_region=${{ github.event.inputs.aws_region }}" \
-            -var="create_vpc=$(echo ${{ env.resources }} | jq -r '.create_vpc')" \
-            -var="create_ec2=$(echo ${{ env.resources }} | jq -r '.create_ec2')" \
-            -var="create_s3=$(echo ${{ env.resources }} | jq -r '.create_s3')" \
-            -var="create_autoscaling=$(echo ${{ env.resources }} | jq -r '.create_autoscaling')" \
-            -var="ami_id=${{ github.event.inputs.ami_id }}" \
-            -var="instance_type=${{ github.event.inputs.instance_type }}" \
-            -var="subnet_id=${{ github.event.inputs.subnet_id }}" \
-            -var="security_group_id=${{ github.event.inputs.security_group_id }}" \
-            -var="s3_bucket_name=${{ github.event.inputs.s3_bucket_name }}"
+        terraform apply -auto-approve \
+          -var="aws_region=${{ github.event.inputs.aws_region }}" \
+          -var="create_vpc=${{ github.event.inputs.create_vpc }}" \
+          -var="create_ec2=${{ github.event.inputs.create_ec2 }}" \
+          -var="create_s3=${{ github.event.inputs.create_s3 }}" \
+          -var="create_autoscaling=${{ github.event.inputs.create_autoscaling }}" \
+          -var="ami_id=${{ github.event.inputs.ami_id }}" \
+          -var="instance_type=${{ github.event.inputs.instance_type }}" \
+          -var="subnet_id=${{ github.event.inputs.subnet_id }}" \
+          -var="security_group_id=${{ github.event.inputs.security_group_id }}" \
+          -var="s3_bucket_name=${{ github.event.inputs.s3_bucket_name }}" 
